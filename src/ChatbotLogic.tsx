@@ -4,6 +4,7 @@ import {MUIChatBot} from './WhatsappLayout';
 import { MessageType } from './ChatData';
 import { useEffect, useState } from "react";
 import { useLocation } from 'react-router-dom';
+import { log } from 'console';
 
 export enum Postion {
     AI = "left",
@@ -16,6 +17,7 @@ const ChatbotOnly = () => {
   const [inProgress, setInProgress] = useState(false);
   const [requiredClickableMessages, setRequiredClickableMessages] = useState(3);
   const [sessionId, setSessionId] = useState<string>();
+  const [images, setImages] = useState([])
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setSessionId(uuidv4());
@@ -87,11 +89,14 @@ const ChatbotOnly = () => {
   const handleSendMessage = async (query: string) => {
     setRequiredClickableMessages(0)
     console.debug(`sending msg with sessionId ${sessionId}`)
-    const {text, images} = await invokeChatEndpoint(query);
+    const { text, images } = await invokeChatEndpoint(query);
+    setImages(images)
+    
     setInProgress(false)
     addAiMessage(text)
   }
 
+// console.log(images);
 
 
   const addUserMessage = (userMessage: string) => {
@@ -105,6 +110,7 @@ const ChatbotOnly = () => {
   return <MUIChatBot
     intro={[]}
     messeges={messages}
+    images = {images}
     queryInProgress={inProgress}
     processQuery={handleSendMessage}
     addUserMessageToChat={addUserMessage}

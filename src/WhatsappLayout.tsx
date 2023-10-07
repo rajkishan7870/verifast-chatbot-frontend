@@ -5,6 +5,9 @@ import { Typography, IconButton, Grid, Paper, Box, CircularProgress, OutlinedInp
 import SendIcon from '@mui/icons-material/Send';
 import { getIndexToBotHeaderImage } from './constants';
 import ClickableBubble from './ClickableChip';
+import Carousel from './Carousel';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 
 
 interface IMessage {
@@ -41,6 +44,15 @@ export const classes = {
         flexDirection: 'column',
         padding: '3px',
         height: '70vh',
+        backgroundColor: "#ffffff"
+    },
+    imageContainer : {
+        
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '3px',
+        
         backgroundColor: "#ffffff"
     },
     messageHints: {
@@ -103,6 +115,7 @@ export const classes = {
 interface MUIChatBotProps {
     intro: IMessage[],
     messeges: IMessage[],
+    images : String[],
     helperBubbleMessages: string[],
     queryInProgress: boolean,
     processQuery: (query: string) => Promise<void>,
@@ -121,6 +134,8 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
     const [inputValue, setInputValue] = useState('');
     const [messageParts, setMessageParts] = useState<string[]>([]);
     const timeoutIdRef = React.useRef<number | null>(null);
+    
+    
 
     const sendQuery = () => {
         if (messageParts.length > 0) {
@@ -155,6 +170,85 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
         setInputValue('');
         props.addUserMessageToChat(inputValue);
     };
+
+    console.log(props.messeges)
+
+    async function handlePositiveResponse(index: number): Promise<any>{
+        
+        let userMessage = "";
+        let backendResponse = "";
+        if (index === 0) {
+            userMessage = "";
+            backendResponse = props.messeges[index].text
+        }
+        else {
+            userMessage = props.messeges[index-1].text;
+            backendResponse = props.messeges[index].text
+        }
+        
+
+
+        const url = 'http://localhost:5000/store_data'; 
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+
+    const payload = {
+        user_message: userMessage,
+        backend_response: backendResponse,
+        Feedback : "Positive"
+        };
+        // console.log(payload)
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+    }
+
+    return await response.json();
+    }
+
+    async function handleNegativeResponse(index: number): Promise<any>{
+        
+        let userMessage = "";
+        let backendResponse = "";
+        if (index === 0) {
+            userMessage = "";
+            backendResponse = props.messeges[index].text
+        }
+        else {
+            userMessage = props.messeges[index-1].text;
+            backendResponse = props.messeges[index].text
+        }
+        const url = 'http://localhost:5000/store_data';
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+
+    const payload = {
+        user_message: userMessage,
+        backend_response: backendResponse,
+        Feedback : "Negative"
+        };
+        // console.log(payload)
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+    }
+
+    return await response.json();
+    }
 
 
 
@@ -246,6 +340,7 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
                             {props.intro.map((message, index) => (
                                 <Paper key={index} sx={classes.aiMessage}>
                                     {message.text}
+                                    
                                 </Paper>
                             ))}
                             {props.messeges.map((message, index) => (
@@ -256,6 +351,7 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
                                         message.sender === props.aiName ? classes.aiMessage : classes.customerMessage
                                     }
                                 >
+                                    
                                     {
                                             <Linkify
                                                 componentDecorator={(decoratedHref, decoratedText, key) => (
@@ -272,13 +368,29 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
                                                     </Link>
                                                 )}
                                             >
-                                                {message.text}
-                                            </Linkify>
+                                            {message.text}
+                                            
+                                            
+                                            
+                                        </Linkify>
+                                        
 
                                     }
+                                    {message.sender === props.aiName ?<ThumbUpIcon onClick={()=>handlePositiveResponse(index)} /> : null}
+                                    {message.sender === props.aiName ?<ThumbDownIcon onClick={()=>handleNegativeResponse(index)} /> : null}
+                                    
+                                    
                                 </Paper>
+                                
+
                             ))}
+                            
+                            {props.images.length>0 && <Box sx={classes.imageContainer}> <Carousel images={props.images}  /></Box>}
+                            
                         </Box>
+
+                        
+                        
                         {
 
                             props.helperBubbleMessages.length > 0 && (
